@@ -1,9 +1,9 @@
 {
- "name": "@token-ring/mysql",
+ "name": "@tokenring-ai/mysql",
+ "description": "MySQL database resources integration",
  "version": "0.1.0",
  "dependencies": {
-  "@token-ring/registry": "0.1.0",
-  "@token-ring/database": "0.1.0",
+  "@tokenring-ai/database": "0.1.0",
   "mysql2": "^3.14.1"
  },
  "exports": {

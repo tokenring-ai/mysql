@@ -1,5 +1,10 @@
-export { default as MySQLService } from "./MySQLResource.js";
+import {TokenRingPackage} from "@tokenring-ai/agent";
+import packageJSON from './package.json' with {type: 'json'};
 
-export const name = "@token-ring/mysql";
-export const description = "MySQL database resources integration";
-export const version = "0.1.0";
+export {default as MySQLService} from "./MySQLResource.js";
+
+export const packageInfo: TokenRingPackage = {
+  name: packageJSON.name,
+  version: packageJSON.version,
+  description: packageJSON.description
+};

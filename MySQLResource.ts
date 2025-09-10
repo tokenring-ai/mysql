@@ -1,14 +1,14 @@
-import {DatabaseResource} from "@token-ring/database";
-import {DatabaseResourceOptions, ExecuteSqlResult} from "@token-ring/database/DatabaseResource";
-import {createPool, Pool, PoolConnection, FieldPacket, QueryResult, RowDataPacket} from "mysql2/promise";
+import {DatabaseResource} from "@tokenring-ai/database";
+import {DatabaseResourceOptions, ExecuteSqlResult} from "@tokenring-ai/database/DatabaseResource";
+import {createPool, FieldPacket, Pool, PoolConnection, RowDataPacket} from "mysql2/promise";
 
 export interface MySQLResourceProps extends DatabaseResourceOptions {
- host: string;
- port?: number;
- user: string;
- password: string;
- databaseName: string;
- connectionLimit?: number;
+  host: string;
+  port?: number;
+  user: string;
+  password: string;
+  databaseName: string;
+  connectionLimit?: number;
 }
 
 export default class MySQLResource extends DatabaseResource {
@@ -23,7 +23,7 @@ export default class MySQLResource extends DatabaseResource {
                 databaseName,
                 connectionLimit = 10
               }: MySQLResourceProps) {
-    super({ allowWrites });
+    super({allowWrites});
 
     // Initialize the pool
     this.pool = createPool({
@@ -59,7 +59,7 @@ export default class MySQLResource extends DatabaseResource {
   /**
    * Shows the schema for all tables in a given MySQL database using a connection from the pool.
    */
-  async showSchema(): Promise<Record<string,string>> {
+  async showSchema(): Promise<Record<string, string>> {
     let connection: PoolConnection | undefined;
     try {
       connection = await this.pool.getConnection();
