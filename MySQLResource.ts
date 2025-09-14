@@ -68,12 +68,12 @@ export default class MySQLResource extends DatabaseResource {
       const schema: Record<string, string> = {};
 
       for (const tableRow of tables as RowDataPacket[]) {
-        const tableName = Object.values(tableRow)[0] as string;
+        const tableName = Object.values(tableRow)[0];
         const [createTableRows] = await connection.execute(`SHOW CREATE TABLE \`${tableName}\`;`);
 
         const createTableResult = createTableRows as RowDataPacket[];
         if (createTableResult.length > 0 && createTableResult[0]['Create Table']) {
-          schema[tableName] = createTableResult[0]['Create Table'] as string;
+          schema[tableName] = createTableResult[0]['Create Table'];
         } else {
           schema[tableName] = 'Could not retrieve CREATE TABLE statement.';
         }
