@@ -1,8 +1,8 @@
-import {DatabaseResource} from "@tokenring-ai/database";
-import {DatabaseResourceOptions, ExecuteSqlResult} from "@tokenring-ai/database/DatabaseResource";
+import {DatabaseProvider} from "@tokenring-ai/database";
+import {DatabaseProviderOptions, ExecuteSqlResult} from "@tokenring-ai/database/DatabaseProvider";
 import {createPool, FieldPacket, Pool, PoolConnection, RowDataPacket} from "mysql2/promise";
 
-export interface MySQLResourceProps extends DatabaseResourceOptions {
+export interface MySQLResourceProps extends DatabaseProviderOptions {
   host: string;
   port?: number;
   user: string;
@@ -11,7 +11,7 @@ export interface MySQLResourceProps extends DatabaseResourceOptions {
   connectionLimit?: number;
 }
 
-export default class MySQLResource extends DatabaseResource {
+export default class MySQLProvider extends DatabaseProvider {
   private pool!: Pool;
 
   constructor({

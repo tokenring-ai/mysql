@@ -1,7 +1,7 @@
 import {TokenRingPackage} from "@tokenring-ai/agent";
 import packageJSON from './package.json' with {type: 'json'};
 
-export {default as MySQLService} from "./MySQLResource.js";
+export {default as MySQLProvider} from "./MySQLProvider.js";
 
 export const packageInfo: TokenRingPackage = {
   name: packageJSON.name,
