@@ -11,7 +11,7 @@ export default {
   install(agentTeam: AgentTeam) {
     const databaseConfig = agentTeam.getConfigSlice('database', DatabaseConfigSchema);
     if (databaseConfig) {
-      agentTeam.services.waitForItemByType(DatabaseService).then(databaseService => {
+      agentTeam.waitForService(DatabaseService, databaseService => {
         for (const name in databaseConfig.providers) {
           const provider = databaseConfig.providers[name];
           if (provider.type === "mysql") {
