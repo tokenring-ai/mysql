@@ -1,6 +1,7 @@
-import {AgentTeam, TokenRingPackage} from "@tokenring-ai/agent";
+import TokenRingApp from "@tokenring-ai/app";
 import {DatabaseConfigSchema} from "@tokenring-ai/database";
 import DatabaseService from "@tokenring-ai/database/DatabaseService";
+import {TokenRingPlugin} from "@tokenring-ai/app";
 import MySQLProvider from "./MySQLProvider.js";
 import packageJSON from './package.json' with {type: 'json'};
 
@@ -8,10 +9,10 @@ export default {
   name: packageJSON.name,
   version: packageJSON.version,
   description: packageJSON.description,
-  install(agentTeam: AgentTeam) {
-    const databaseConfig = agentTeam.getConfigSlice('database', DatabaseConfigSchema);
+  install(app: TokenRingApp) {
+    const databaseConfig = app.getConfigSlice('database', DatabaseConfigSchema);
     if (databaseConfig) {
-      agentTeam.waitForService(DatabaseService, databaseService => {
+      app.waitForService(DatabaseService, databaseService => {
         for (const name in databaseConfig.providers) {
           const provider = databaseConfig.providers[name];
           if (provider.type === "mysql") {
@@ -21,6 +22,6 @@ export default {
       });
     }
   }
-} as TokenRingPackage;
+} as TokenRingPlugin;
 
 export {default as MySQLProvider} from "./MySQLProvider.js";
