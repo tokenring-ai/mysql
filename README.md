@@ -1,270 +1,248 @@
-# MySQL Package Documentation
+# @tokenring-ai/mysql
+
+A MySQL database integration package for the TokenRing AI platform, providing connection pooling, SQL query execution, and schema inspection capabilities.
 
 ## Overview
 
-The `@tokenring-ai/mysql` package provides MySQL database integration for the TokenRing AI platform. It extends the base
-`DatabaseResource` from `@tokenring-ai/database` to offer connection pooling, SQL query execution, and schema inspection
-capabilities specifically for MySQL databases. This package is designed for use in AI agents or services that require
-reliable database interactions, such as querying data or retrieving table schemas.
+The `@tokenring-ai/mysql` package extends the base `DatabaseProvider` from `@tokenring-ai/database` to offer MySQL-specific functionality. It's designed as a plugin for the TokenRing ecosystem, automatically registering MySQL database providers based on configuration.
 
-Key features include:
+### Key Features
 
-- Connection pooling using `mysql2` for efficient, reusable connections.
-- Asynchronous SQL execution with result handling.
-- Schema retrieval via `SHOW TABLES` and `SHOW CREATE TABLE` queries.
-- Integration with the broader TokenRing ecosystem via the `DatabaseResource` base class, which may enforce read-only
-  modes or other constraints.
+- **Connection Pooling**: Efficient connection management using `mysql2` with configurable limits
+- **SQL Query Execution**: Execute raw SQL queries with proper result handling
+- **Schema Inspection**: Retrieve CREATE TABLE statements for all database tables
+- **Plugin Integration**: Seamlessly integrates with TokenRing applications via the plugin system
+- **TypeScript Support**: Full TypeScript definitions and type safety
 
-## Installation/Setup
+## Installation
 
-This package is part of the TokenRing AI monorepo under `pkg/mysql`. To use it in a larger project:
+```bash
+npm install @tokenring-ai/mysql @tokenring-ai/database mysql2
+```
 
-1. Ensure Node.js (v18+) and npm/yarn are installed.
-2. If building from source, navigate to the project root and run:
-   ```
-   npm install
-   npm run build
-   ```
-3. For standalone installation (if published):
-   ```
-   npm install @tokenring-ai/mysql @tokenring-ai/database mysql2
-   ```
-4. Set up environment variables or configuration for database credentials (host, port, user, password, database name).
-5. Import and instantiate the `MySQLResource` class with the required props.
+## Usage
 
-Note: This package assumes a MySQL server is running and accessible. Test connections during setup.
+### As a TokenRing Plugin
 
-## Package Structure
+The package is designed to work as a TokenRing plugin. Add it to your application configuration:
 
-The package is organized as follows:
+```typescript
+import TokenRingApp from "@tokenring-ai/app";
+import mysqlPlugin from "@tokenring-ai/mysql";
 
-- **`MySQLResource.ts`**: Core implementation of the MySQL database resource class, handling pooling and queries.
-- **`index.ts`**: Main entry point, exporting `MySQLService` (alias for `MySQLResource`) and package metadata.
-- **`package.json`**: Defines package metadata, dependencies, and exports.
-- **`LICENSE`**: MIT license file.
+const app = new TokenRingApp();
+app.use(mysqlPlugin);
+```
 
-No additional subdirectories; it's a lightweight, single-module package.
+### Configuration
 
-## Core Components
+Configure MySQL providers in your application's database configuration:
 
-### MySQLResource Class
+```typescript
+// In your app configuration
+const databaseConfig = {
+  providers: {
+    mymysql: {
+      type: "mysql",
+      host: "localhost",
+      port: 3306,
+      user: "root",
+      password: "password",
+      databaseName: "myapp",
+      connectionLimit: 10,
+      allowWrites: false
+    }
+  }
+};
+```
 
-This is the primary class, extending `DatabaseResource` from `@tokenring-ai/database`. It manages a connection pool to a
-MySQL database.
+### Direct Usage
+
+You can also use the `MySQLProvider` class directly:
+
+```typescript
+import MySQLProvider from "@tokenring-ai/mysql";
+
+const mysqlProvider = new MySQLProvider({
+  host: "localhost",
+  port: 3306,
+  user: "root",
+  password: "password",
+  databaseName: "myapp",
+  connectionLimit: 10,
+  allowWrites: true
+});
+
+// Execute SQL queries
+const result = await mysqlProvider.executeSql("SELECT * FROM users");
+console.log(result.rows);
+console.log(result.fields);
+
+// Inspect database schema
+const schema = await mysqlProvider.showSchema();
+console.log(schema);
+```
+
+## API Reference
+
+### MySQLProvider Class
+
+The main class that provides MySQL database functionality.
 
 #### Constructor
 
-Initializes the connection pool with the provided options.
-
-**Signature:**
-
 ```typescript
-constructor({
-  allowWrites = false,
-  host: string,
-  port? : number(default: 3306),
-  user
-:
-string,
-  password
-:
-string,
-  databaseName
-:
-string,
-  connectionLimit ? : number(
-default:
-10
-)
-}:
-MySQLResourceProps
-)
+constructor(props: MySQLResourceProps)
 ```
 
 **Parameters:**
 
-- `allowWrites`: Boolean from base class; controls write permissions (default: false).
-- `host`: MySQL server hostname or IP.
-- `port`: MySQL port (default: 3306).
-- `user`: Database username.
-- `password`: Database password.
-- `databaseName`: Name of the target database.
-- `connectionLimit`: Maximum number of pooled connections (default: 10).
+- `allowWrites` (boolean, optional): Whether to allow write operations (default: `false`)
+- `host` (string): MySQL server hostname or IP address
+- `port` (number, optional): MySQL port number (default: `3306`)
+- `user` (string): Database username
+- `password` (string): Database password
+- `databaseName` (string): Name of the target database
+- `connectionLimit` (number, optional): Maximum number of pooled connections (default: `10`)
 
-**Behavior:** Creates a `mysql2` pool with options like `waitForConnections: true` and `queueLimit: 0` for reliable
-queuing.
+#### Methods
 
-#### executeSql Method
-
-Executes a raw SQL query and returns the results.
-
-**Signature:**
+##### executeSql
 
 ```typescript
 async executeSql(sqlQuery: string): Promise<ExecuteSqlResult>
 ```
 
-**Parameters:**
+Executes a raw SQL query and returns the results.
 
-- `sqlQuery`: The SQL statement to execute (e.g., `SELECT * FROM users`).
-
-**Returns:** `ExecuteSqlResult` object with:
-
-- `rows`: Array of row objects (as `RowDataPacket[]`).
-- `fields`: Array of field names (strings).
-
-**Behavior:** Acquires a pooled connection, executes the query, and releases the connection. Handles errors implicitly
-via try-finally. Supports SELECT, INSERT, UPDATE, etc., based on `allowWrites`.
+**Returns:** `ExecuteSqlResult` object containing:
+- `rows`: Array of row objects (`RowDataPacket[]`)
+- `fields`: Array of field names (`string[]`)
 
 **Example:**
-
 ```typescript
-const result = await mysqlResource.executeSql('SELECT * FROM users WHERE id = 1');
-console.log(result.rows); // Array of user rows
-console.log(result.fields); // ['id', 'name', 'email']
+const result = await mysqlProvider.executeSql("SELECT * FROM users WHERE id = 1");
+console.log(result.rows); // [{ id: 1, name: "John", email: "john@example.com" }]
+console.log(result.fields); // ["id", "name", "email"]
 ```
 
-#### showSchema Method
-
-Retrieves the CREATE TABLE statements for all tables in the database.
-
-**Signature:**
+##### showSchema
 
 ```typescript
 async showSchema(): Promise<Record<string, string>>
 ```
 
-**Returns:** Object mapping table names to their CREATE TABLE SQL strings. If retrieval fails for a table, it uses a
-fallback message.
+Retrieves the CREATE TABLE statements for all tables in the database.
 
-**Behavior:** Queries `SHOW TABLES`, then for each table, runs `SHOW CREATE TABLE`. Uses a single pooled connection for
-efficiency.
+**Returns:** Object mapping table names to their CREATE TABLE SQL strings.
 
 **Example:**
-
 ```typescript
-const schema = await mysqlResource.showSchema();
-console.log(schema['users']); // "CREATE TABLE `users` ( ... ) ..."
+const schema = await mysqlProvider.showSchema();
+console.log(schema.users);
+// "CREATE TABLE `users` (
+//   `id` int(11) NOT NULL AUTO_INCREMENT,
+//   `name` varchar(255) NOT NULL,
+//   `email` varchar(255) NOT NULL,
+//   PRIMARY KEY (`id`)
+// ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 ```
 
-**Interactions:** All methods use the shared pool for connections. The base `DatabaseResource` may add logging,
-validation, or read-only enforcement.
+### Interfaces
 
-## Usage Examples
-
-### Basic Connection and Query
+#### MySQLResourceProps
 
 ```typescript
-import MySQLResource from '@tokenring-ai/mysql';
-
-const mysqlResource = new MySQLResource({
-  host: 'localhost',
-  user: 'root',
-  password: 'password',
-  databaseName: 'myapp',
-  allowWrites: true // Enable if needed
-});
-
-async function queryUsers() {
-  try {
-    const result = await mysqlResource.executeSql('SELECT * FROM users');
-    console.log('Users:', result.rows);
-  } catch (error) {
-    console.error('Query failed:', error);
-  } finally {
-    // Optional: End pool if done
-    // await mysqlResource.pool.end();
-  }
+interface MySQLResourceProps extends DatabaseProviderOptions {
+  host: string;
+  port?: number;
+  user: string;
+  password: string;
+  databaseName: string;
+  connectionLimit?: number;
 }
-
-queryUsers();
 ```
 
-### Schema Inspection
+#### ExecuteSqlResult
 
 ```typescript
-import MySQLResource from '@tokenring-ai/mysql';
-
-const mysqlResource = new MySQLResource({
-  host: 'localhost',
-  user: 'root',
-  password: 'password',
-  databaseName: 'myapp'
-});
-
-async function inspectSchema() {
-  const schema = await mysqlResource.showSchema();
-  Object.entries(schema).forEach(([table, createSql]) => {
-    console.log(`Table: ${table}\nSchema: ${createSql.substring(0, 100)}...`);
-  });
+interface ExecuteSqlResult {
+  rows: RowDataPacket[];
+  fields: string[];
 }
-
-inspectSchema();
 ```
 
-### Integration in TokenRing Agent
+## Package Structure
 
-Assuming TokenRing agent setup:
+```
+pkg/mysql/
+├── index.ts              # Main entry point and plugin definition
+├── MySQLProvider.ts      # Core MySQL provider implementation
+├── package.json          # Package metadata and dependencies
+├── README.md             # This documentation
+└── LICENSE               # MIT license
+```
 
-```typescript
-import { TokenRingAgent } from '@tokenring-ai/agent';
-import MySQLResource from '@tokenring-ai/mysql';
+## Dependencies
 
-const agent = new TokenRingAgent({
-  resources: [
-    new MySQLResource({
-      host: process.env.MYSQL_HOST,
-      // ... other props from env
-    })
-  ]
-});
+- **@tokenring-ai/database** (^0.1.0): Base `DatabaseProvider` class and types
+- **mysql2** (^3.15.3): Promise-based MySQL client for Node.js
 
-// Agent can now use the resource for DB operations
+## Development
+
+### Testing
+
+Run the test suite:
+
+```bash
+npm test
+```
+
+### Building
+
+The package uses TypeScript with ES modules. Build with:
+
+```bash
+npm run build
 ```
 
 ## Configuration Options
 
-- **Database Props**: As in constructor (host, port, user, password, databaseName, connectionLimit).
-- **Pool Options**: Internally fixed (waitForConnections: true, queueLimit: 0). Extend the class if custom pooling is
-  needed.
-- **Environment Variables**: Recommended for production (e.g., `MYSQL_HOST`, `MYSQL_USER`). Use a config loader.
-- **Base Class Options**: `allowWrites` from `DatabaseResourceOptions`; may include logging or retry configs in the
-  base.
+### Environment Variables
 
-No additional config files; all via constructor.
+For production, consider using environment variables:
 
-## API Reference
+```bash
+export MYSQL_HOST=localhost
+export MYSQL_PORT=3306
+export MYSQL_USER=root
+export MYSQL_PASSWORD=your_password
+export MYSQL_DATABASE=myapp
+export MYSQL_CONNECTION_LIMIT=10
+```
 
-- **Class: `MySQLResource`**
- - `constructor(props: MySQLResourceProps)`: Initializes the resource.
- - `async executeSql(sqlQuery: string): Promise<ExecuteSqlResult>`: Executes SQL and returns rows/fields.
- - `async showSchema(): Promise<Record<string, string>>`: Returns schema for all tables.
+### Pool Configuration
 
-- **Interfaces:**
- - `MySQLResourceProps`: Extends `DatabaseResourceOptions` with MySQL-specific fields.
- - `ExecuteSqlResult`: `{ rows: RowDataPacket[]; fields: string[]; }`.
+The connection pool uses these internal settings:
+- `waitForConnections: true` - Wait for available connections
+- `queueLimit: 0` - Unlimited queue size
+- `connectionLimit` - Configurable maximum connections (default: 10)
 
-- **Exports:**
- - `MySQLService`: Alias for `MySQLResource` (default export).
- - `packageInfo: TokenRingPackage`: Metadata from package.json.
+## License
 
-## Dependencies
+MIT License - see [LICENSE](LICENSE) file for details.
 
-- `@tokenring-ai/database` (^0.1.0): Base `DatabaseResource` class and types.
-- `mysql2` (^3.14.1): Promise-based MySQL client for Node.js.
+## Contributing
 
-Dev dependencies (for testing): vitest.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Submit a pull request
 
-## Contributing/Notes
+## Notes
 
-- **Testing:** Run `npm test` (uses Vitest) to verify functionality. Add integration tests for real MySQL instances.
-- **Building:** Use TypeScript compilation; ensure ES modules (`type: 'module'`).
-- **Known Limitations:**
- - Binary data handling not explicitly supported; use base64 if needed.
- - Error handling is basic (try-finally for connections); extend for transactions or advanced retries.
- - Assumes UTF-8 text; binary files skipped in searches.
- - Pool not ended automatically; call `pool.end()` manually if required.
-- **License:** MIT (see LICENSE).
-- For contributions, follow TokenRing AI guidelines: fork, PR with tests, update docs.
-
-This documentation is based on the current codebase (v0.1.0). Check for updates in the repository.
+- The package assumes UTF-8 encoding for text data
+- Binary data handling is not explicitly supported
+- Connection pooling is managed automatically
+- The plugin system handles registration and lifecycle management
