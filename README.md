@@ -13,11 +13,12 @@ The `@tokenring-ai/mysql` package extends the base `DatabaseProvider` from `@tok
 - **Schema Inspection**: Retrieve CREATE TABLE statements for all database tables
 - **Plugin Integration**: Seamlessly integrates with TokenRing applications via the plugin system
 - **TypeScript Support**: Full TypeScript definitions and type safety
+- **Write Operation Control**: Optional write permission enforcement
 
 ## Installation
 
 ```bash
-npm install @tokenring-ai/mysql @tokenring-ai/database mysql2
+bun install @tokenring-ai/mysql @tokenring-ai/database mysql2
 ```
 
 ## Usage
@@ -28,18 +29,10 @@ The package is designed to work as a TokenRing plugin. Add it to your applicatio
 
 ```typescript
 import TokenRingApp from "@tokenring-ai/app";
-import mysqlPlugin from "@tokenring-ai/mysql";
+import {DatabaseConfigSchema} from "@tokenring-ai/database";
 
 const app = new TokenRingApp();
-app.use(mysqlPlugin);
-```
 
-### Configuration
-
-Configure MySQL providers in your application's database configuration:
-
-```typescript
-// In your app configuration
 const databaseConfig = {
   providers: {
     mymysql: {
@@ -54,6 +47,11 @@ const databaseConfig = {
     }
   }
 };
+
+app.useDatabaseConfig(databaseConfig);
+
+// The plugin automatically registers MySQL providers when the application starts:
+app.start();
 ```
 
 ### Direct Usage
@@ -96,7 +94,6 @@ constructor(props: MySQLResourceProps)
 ```
 
 **Parameters:**
-
 - `allowWrites` (boolean, optional): Whether to allow write operations (default: `false`)
 - `host` (string): MySQL server hostname or IP address
 - `port` (number, optional): MySQL port number (default: `3306`)
@@ -179,32 +176,16 @@ pkg/mysql/
 ├── index.ts              # Main entry point and plugin definition
 ├── MySQLProvider.ts      # Core MySQL provider implementation
 ├── package.json          # Package metadata and dependencies
+├── plugin.ts             # TokenRing plugin registration
 ├── README.md             # This documentation
 └── LICENSE               # MIT license
 ```
 
 ## Dependencies
 
-- **@tokenring-ai/database** (^0.1.0): Base `DatabaseProvider` class and types
+- **@tokenring-ai/database** (^0.2.0): Base `DatabaseProvider` class and types
+- **@tokenring-ai/app** (^0.2.0): TokenRing application framework
 - **mysql2** (^3.15.3): Promise-based MySQL client for Node.js
-
-## Development
-
-### Testing
-
-Run the test suite:
-
-```bash
-npm test
-```
-
-### Building
-
-The package uses TypeScript with ES modules. Build with:
-
-```bash
-npm run build
-```
 
 ## Configuration Options
 
@@ -228,21 +209,24 @@ The connection pool uses these internal settings:
 - `queueLimit: 0` - Unlimited queue size
 - `connectionLimit` - Configurable maximum connections (default: 10)
 
+## Development
+
+### Testing
+
+Run the test suite:
+
+```bash
+bun run test
+```
+
+### Building
+
+The package uses TypeScript with ES modules. Build with:
+
+```bash
+bun run build
+```
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
-
-## Notes
-
-- The package assumes UTF-8 encoding for text data
-- Binary data handling is not explicitly supported
-- Connection pooling is managed automatically
-- The plugin system handles registration and lifecycle management
