@@ -178,6 +178,7 @@ pkg/mysql/
 ├── package.json          # Package metadata and dependencies
 ├── plugin.ts             # TokenRing plugin registration
 ├── README.md             # This documentation
+├── vitest.config.ts      # Vitest test configuration
 └── LICENSE               # MIT license
 ```
 
@@ -217,6 +218,14 @@ Run the test suite:
 
 ```bash
 bun run test
+```
+
+### Test Coverage
+
+Generate test coverage report:
+
+```bash
+bun run test:coverage
 ```
 
 ### Building
