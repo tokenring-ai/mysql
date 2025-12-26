@@ -1,26 +1,29 @@
-import TokenRingApp from "@tokenring-ai/app";
+import {TokenRingPlugin} from "@tokenring-ai/app";
 import {DatabaseConfigSchema} from "@tokenring-ai/database";
 import DatabaseService from "@tokenring-ai/database/DatabaseService";
-import {TokenRingPlugin} from "@tokenring-ai/app";
+import {z} from "zod";
 import MySQLProvider from "./MySQLProvider.js";
 import packageJSON from './package.json' with {type: 'json'};
 
+const packageConfigSchema = z.object({
+  database: DatabaseConfigSchema
+});
 
 export default {
   name: packageJSON.name,
   version: packageJSON.version,
   description: packageJSON.description,
-  install(app: TokenRingApp) {
-    const databaseConfig = app.getConfigSlice('database', DatabaseConfigSchema);
-    if (databaseConfig) {
+  install(app, config) {
+    if (config.database) {
       app.waitForService(DatabaseService, databaseService => {
-        for (const name in databaseConfig.providers) {
-          const provider = databaseConfig.providers[name];
+        for (const name in config.database!.providers) {
+          const provider = config.database!.providers[name];
           if (provider.type === "mysql") {
             databaseService.registerDatabase(name, new MySQLProvider(provider));
           }
         }
       });
     }
-  }
-} satisfies TokenRingPlugin;
+  },
+  config: packageConfigSchema
+} satisfies TokenRingPlugin<typeof packageConfigSchema>;
