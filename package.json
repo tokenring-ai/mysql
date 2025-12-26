@@ -5,7 +5,7 @@
   "dependencies": {
     "@tokenring-ai/app": "0.2.0",
     "@tokenring-ai/database": "0.2.0",
-    "mysql2": "^3.15.3"
+    "mysql2": "^3.16.0"
   },
   "exports": {
     ".": "./index.ts",
