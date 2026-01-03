@@ -1,19 +1,8 @@
 # @tokenring-ai/mysql
 
-A MySQL database integration package for the TokenRing AI platform, providing connection pooling, SQL query execution, and schema inspection capabilities.
-
 ## Overview
 
-The `@tokenring-ai/mysql` package extends the base `DatabaseProvider` from `@tokenring-ai/database` to offer MySQL-specific functionality. It's designed as a plugin for the TokenRing ecosystem, automatically registering MySQL database providers based on configuration.
-
-### Key Features
-
-- **Connection Pooling**: Efficient connection management using `mysql2` with configurable limits
-- **SQL Query Execution**: Execute raw SQL queries with proper result handling
-- **Schema Inspection**: Retrieve CREATE TABLE statements for all database tables
-- **Plugin Integration**: Seamlessly integrates with TokenRing applications via the plugin system
-- **TypeScript Support**: Full TypeScript definitions and type safety
-- **Write Operation Control**: Optional write permission enforcement
+MySQL database integration package for the TokenRing AI platform, providing connection pooling, SQL query execution, and schema inspection capabilities through a unified interface. This package extends the base `DatabaseProvider` from `@tokenring-ai/database` to offer MySQL-specific functionality and integrates seamlessly with the TokenRing ecosystem as a plugin.
 
 ## Installation
 
@@ -21,67 +10,17 @@ The `@tokenring-ai/mysql` package extends the base `DatabaseProvider` from `@tok
 bun install @tokenring-ai/mysql @tokenring-ai/database mysql2
 ```
 
-## Usage
+## Features
 
-### As a TokenRing Plugin
+- **Connection Pooling**: Efficient connection management using `mysql2` with configurable limits
+- **SQL Query Execution**: Execute raw SQL queries with proper result handling
+- **Schema Inspection**: Retrieve CREATE TABLE statements for all database tables
+- **Plugin Integration**: Seamlessly integrates with TokenRing applications via the plugin system
+- **Type-Safe Configuration**: Zod-based schema validation for configuration
+- **Write Operation Control**: Optional write permission enforcement
+- **TypeScript Support**: Full TypeScript definitions and type safety
 
-The package is designed to work as a TokenRing plugin. Add it to your application configuration:
-
-```typescript
-import TokenRingApp from "@tokenring-ai/app";
-import {DatabaseConfigSchema} from "@tokenring-ai/database";
-
-const app = new TokenRingApp();
-
-const databaseConfig = {
-  providers: {
-    mymysql: {
-      type: "mysql",
-      host: "localhost",
-      port: 3306,
-      user: "root",
-      password: "password",
-      databaseName: "myapp",
-      connectionLimit: 10,
-      allowWrites: false
-    }
-  }
-};
-
-app.useDatabaseConfig(databaseConfig);
-
-// The plugin automatically registers MySQL providers when the application starts:
-app.start();
-```
-
-### Direct Usage
-
-You can also use the `MySQLProvider` class directly:
-
-```typescript
-import MySQLProvider from "@tokenring-ai/mysql";
-
-const mysqlProvider = new MySQLProvider({
-  host: "localhost",
-  port: 3306,
-  user: "root",
-  password: "password",
-  databaseName: "myapp",
-  connectionLimit: 10,
-  allowWrites: true
-});
-
-// Execute SQL queries
-const result = await mysqlProvider.executeSql("SELECT * FROM users");
-console.log(result.rows);
-console.log(result.fields);
-
-// Inspect database schema
-const schema = await mysqlProvider.showSchema();
-console.log(schema);
-```
-
-## API Reference
+## Core Components
 
 ### MySQLProvider Class
 
@@ -145,50 +84,96 @@ console.log(schema.users);
 // ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 ```
 
-### Interfaces
+## Usage Examples
 
-#### MySQLResourceProps
-
-```typescript
-interface MySQLResourceProps extends DatabaseProviderOptions {
-  host: string;
-  port?: number;
-  user: string;
-  password: string;
-  databaseName: string;
-  connectionLimit?: number;
-}
-```
-
-#### ExecuteSqlResult
+### As a TokenRing Plugin
 
 ```typescript
-interface ExecuteSqlResult {
-  rows: RowDataPacket[];
-  fields: string[];
-}
+import TokenRingApp from "@tokenring-ai/app";
+import databasePlugin from "@tokenring-ai/database";
+import mysqlPlugin from "@tokenring-ai/mysql";
+
+const app = new TokenRingApp({
+  config: {
+    database: {
+      providers: {
+        mymysql: {
+          type: "mysql",
+          host: "localhost",
+          port: 3306,
+          user: "root",
+          password: "password",
+          databaseName: "myapp",
+          connectionLimit: 10,
+          allowWrites: false
+        }
+      }
+    }
+  }
+});
+
+app.use(databasePlugin);
+app.use(mysqlPlugin);
+await app.start();
 ```
 
-## Package Structure
+### Direct Usage
 
+```typescript
+import MySQLProvider from "@tokenring-ai/mysql";
+
+const mysqlProvider = new MySQLProvider({
+  host: "localhost",
+  port: 3306,
+  user: "root",
+  password: "password",
+  databaseName: "myapp",
+  connectionLimit: 10,
+  allowWrites: true
+});
+
+// Execute SQL queries
+const result = await mysqlProvider.executeSql("SELECT * FROM users");
+console.log(result.rows);
+console.log(result.fields);
+
+// Inspect database schema
+const schema = await mysqlProvider.showSchema();
+console.log(schema);
 ```
-pkg/mysql/
-├── index.ts              # Main entry point and plugin definition
-├── MySQLProvider.ts      # Core MySQL provider implementation
-├── package.json          # Package metadata and dependencies
-├── plugin.ts             # TokenRing plugin registration
-├── README.md             # This documentation
-├── vitest.config.ts      # Vitest test configuration
-└── LICENSE               # MIT license
+
+## Plugin Configuration
+
+### Configuration Schema
+
+```typescript
+import { z } from "zod";
+
+const packageConfigSchema = z.object({
+  database: z.object({
+    providers: z.record(z.string(), z.any())
+  })
+});
 ```
 
-## Dependencies
+### Example Configuration
 
-- **@tokenring-ai/database** (^0.2.0): Base `DatabaseProvider` class and types
-- **@tokenring-ai/app** (^0.2.0): TokenRing application framework
-- **mysql2** (^3.15.3): Promise-based MySQL client for Node.js
-
-## Configuration Options
+```typescript
+const databaseConfig = {
+  providers: {
+    mymysql: {
+      type: "mysql",
+      host: "localhost",
+      port: 3306,
+      user: "root",
+      password: "password",
+      databaseName: "myapp",
+      connectionLimit: 10,
+      allowWrites: false
+    }
+  }
+};
+```
 
 ### Environment Variables
 
@@ -210,32 +195,87 @@ The connection pool uses these internal settings:
 - `queueLimit: 0` - Unlimited queue size
 - `connectionLimit` - Configurable maximum connections (default: 10)
 
+## Error Handling
+
+The package provides comprehensive error handling:
+
+- **Invalid Credentials**: Throws clear error messages for invalid MySQL credentials
+- **Connection Failures**: Handles network issues with descriptive errors
+- **SQL Errors**: Proper error handling for invalid SQL queries
+- **Write Permissions**: Prevents write operations when `allowWrites` is false
+- **Validation Errors**: Zod schema validation for all configuration options
+
+## Integration
+
+### TokenRing Plugin Integration
+
+The package automatically registers MySQL providers when configured:
+
+```typescript
+const app = new TokenRingApp({
+  plugins: [
+    databasePlugin,
+    mysqlPlugin
+  ],
+  config: {
+    database: {
+      providers: {
+        mysql: {
+          type: "mysql",
+          host: process.env.MYSQL_HOST,
+          port: parseInt(process.env.MYSQL_PORT),
+          user: process.env.MYSQL_USER,
+          password: process.env.MYSQL_PASSWORD,
+          databaseName: process.env.MYSQL_DATABASE,
+          connectionLimit: parseInt(process.env.MYSQL_CONNECTION_LIMIT)
+        }
+      }
+    }
+  }
+});
+
+await app.start();
+```
+
+### Agent Integration
+
+Agents can access MySQL provider directly through the database service:
+
+```typescript
+// Access via DatabaseService
+const databaseService = agent.requireServiceByType(DatabaseService);
+const mysqlProvider = databaseService.getDatabaseByName("mymysql");
+const result = await mysqlProvider.executeSql("SELECT * FROM users");
+```
+
 ## Development
 
 ### Testing
 
-Run the test suite:
-
 ```bash
 bun run test
-```
-
-### Test Coverage
-
-Generate test coverage report:
-
-```bash
 bun run test:coverage
 ```
 
-### Building
+### Package Structure
 
-The package uses TypeScript with ES modules. Build with:
-
-```bash
-bun run build
 ```
+pkg/mysql/
+├── MySQLProvider.ts      # Core MySQL provider implementation
+├── index.ts              # Main entry point and exports
+├── plugin.ts             # TokenRing plugin registration
+├── package.json          # Package metadata and dependencies
+├── vitest.config.ts      # Vitest test configuration
+└── README.md             # Package documentation
+```
+
+### Contribution Guidelines
+
+- Follow established coding patterns
+- Write unit tests for new functionality
+- Update documentation for new features
+- Ensure all changes work with TokenRing agent framework
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](./LICENSE) file for details.
