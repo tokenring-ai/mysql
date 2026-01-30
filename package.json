@@ -20,7 +20,7 @@
   },
   "type": "module",
   "devDependencies": {
-    "vitest": "catalog:",
-    "typescript": "catalog:"
+    "vitest": "^4.0.18",
+    "typescript": "^5.9.3"
   }
 }
