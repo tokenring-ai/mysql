@@ -23,7 +23,7 @@ export default class MySQLProvider extends DatabaseProvider {
                 databaseName,
                 connectionLimit = 10
               }: MySQLResourceProps) {
-    super({allowWrites});
+    super(allowWrites);
 
     // Initialize the pool
     this.pool = createPool({
