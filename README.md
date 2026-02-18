@@ -53,7 +53,7 @@ async executeSql(sqlQuery: string): Promise<ExecuteSqlResult>
 Executes a raw SQL query and returns the results.
 
 **Returns:** `ExecuteSqlResult` object containing:
-- `rows`: Array of row objects (`RowDataPacket[]`)
+- `rows`: Array of row objects (`Record<string, string | number | null>[]`)
 - `fields`: Array of field names (`string[]`)
 
 **Example:**
@@ -87,14 +87,16 @@ console.log(schema.users);
 // ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 ```
 
-### DatabaseService Integration
+## Package Exports
 
-The MySQL plugin registers MySQL providers with the `DatabaseService` when configured:
+This package supports multiple import paths:
 
 ```typescript
-// After plugin installation
-const databaseService = app.services.find(s => s.name === "DatabaseService");
-const mysqlProvider = databaseService.getDatabaseByName("mymysql");
+// Main package import
+import MySQLProvider from '@tokenring-ai/mysql';
+
+// Direct import with extension
+import MySQLProvider from '@tokenring-ai/mysql/MySQLProvider.js';
 ```
 
 ## Plugin Configuration
@@ -154,6 +156,92 @@ The connection pool uses these internal settings:
 ## Agent Configuration
 
 This package does not have any services with an `attach(agent: Agent)` method that merges in an agent config schema.
+
+## Tools
+
+The `@tokenring-ai/mysql` package itself doesn't define tools directly, but it works with the database tools provided by `@tokenring-ai/database`:
+
+- **database_executeSql**: Executes SQL queries on registered MySQL databases
+- **database_showSchema**: Retrieves database schemas for registered MySQL databases
+
+These tools are automatically available when the plugin is registered with a TokenRing application.
+
+## Services
+
+### MySQLProvider Registration
+
+The MySQL plugin registers MySQL providers with the `DatabaseService` when configured:
+
+```typescript
+// After plugin installation
+const databaseService = app.services.find(s => s.name === "DatabaseService");
+const mysqlProvider = databaseService.getDatabaseByName("mymysql");
+```
+
+## Providers
+
+### MySQLProvider
+
+The `MySQLProvider` class extends `DatabaseProvider` from `@tokenring-ai/database` and implements the required methods for MySQL-specific functionality.
+
+**Provider Interface:**
+
+```typescript
+interface MySQLResourceProps extends DatabaseProviderOptions {
+  host: string;
+  port?: number;
+  user: string;
+  password: string;
+  databaseName: string;
+  connectionLimit?: number;
+}
+```
+
+**Provider Properties:**
+
+- `host`: MySQL server hostname or IP address (required)
+- `port`: MySQL port number (default: `3306`)
+- `user`: Database username (required)
+- `password`: Database password (required)
+- `databaseName`: Name of the target database (required)
+- `connectionLimit`: Maximum number of pooled connections (default: `10`)
+- `allowWrites`: Whether to allow write operations (default: `false`)
+
+## RPC Endpoints
+
+This package does not define RPC endpoints.
+
+## State Management
+
+This package does not have state slices or state management functionality.
+
+## Error Handling
+
+The package provides comprehensive error handling:
+
+- **Invalid Credentials**: Throws clear error messages for invalid MySQL credentials
+- **Connection Failures**: Handles network issues with descriptive errors
+- **SQL Errors**: Proper error handling for invalid SQL queries
+- **Write Permissions**: Prevents write operations when `allowWrites` is false
+- **Validation Errors**: Zod schema validation for all configuration options
+
+Common error scenarios:
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Connection timeout | Network issues or incorrect host/port | Verify host, port, and network connectivity |
+| Authentication failure | Invalid credentials | Verify username, password, and MySQL user privileges |
+| Database access error | Insufficient permissions | Ensure the user has proper permissions for the database |
+| SQL syntax error | Invalid SQL query | Validate your SQL queries before execution |
+| Connection pool exhaustion | Too many concurrent connections | Increase connectionLimit in configuration |
+
+## Security Considerations
+
+- Use environment variables for sensitive credentials
+- Configure allowWrites carefully to prevent unauthorized modifications
+- Consider using read-only users for agents that only need to query data
+- Validate and sanitize all SQL input to prevent injection attacks
+- Limit database access to necessary tables and operations based on agent requirements
 
 ## Usage Examples
 
@@ -241,42 +329,6 @@ const mysqlProvider = databaseService.getDatabaseByName("mymysql");
 // Execute queries
 const result = await mysqlProvider.executeSql("SELECT * FROM users");
 ```
-
-## RPC Endpoints
-
-This package does not define RPC endpoints.
-
-## State Management
-
-This package does not have state slices or state management functionality.
-
-## Error Handling
-
-The package provides comprehensive error handling:
-
-- **Invalid Credentials**: Throws clear error messages for invalid MySQL credentials
-- **Connection Failures**: Handles network issues with descriptive errors
-- **SQL Errors**: Proper error handling for invalid SQL queries
-- **Write Permissions**: Prevents write operations when `allowWrites` is false
-- **Validation Errors**: Zod schema validation for all configuration options
-
-Common error scenarios:
-
-| Error | Cause | Solution |
-|-------|-------|----------|
-| Connection timeout | Network issues or incorrect host/port | Verify host, port, and network connectivity |
-| Authentication failure | Invalid credentials | Verify username, password, and MySQL user privileges |
-| Database access error | Insufficient permissions | Ensure the user has proper permissions for the database |
-| SQL syntax error | Invalid SQL query | Validate your SQL queries before execution |
-| Connection pool exhaustion | Too many concurrent connections | Increase connectionLimit in configuration |
-
-## Security Considerations
-
-- Use environment variables for sensitive credentials
-- Configure allowWrites carefully to prevent unauthorized modifications
-- Consider using read-only users for agents that only need to query data
-- Validate and sanitize all SQL input to prevent injection attacks
-- Limit database access to necessary tables and operations based on agent requirements
 
 ## Development
 
