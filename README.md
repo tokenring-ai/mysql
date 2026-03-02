@@ -7,7 +7,7 @@ MySQL database integration package for the TokenRing AI platform, providing conn
 ## Installation
 
 ```bash
-bun install @tokenring-ai/mysql @tokenring-ai/database mysql2
+bun install @tokenring-ai/mysql @tokenring-ai/database mysql2 zod
 ```
 
 ## Features
@@ -17,14 +17,37 @@ bun install @tokenring-ai/mysql @tokenring-ai/database mysql2
 - **Schema Inspection**: Retrieve CREATE TABLE statements for all database tables
 - **Plugin Integration**: Seamlessly integrates with TokenRing applications via the plugin system
 - **Type-Safe Configuration**: Zod-based schema validation for configuration
-- **Write Operation Control**: Optional write permission enforcement
+- **Write Operation Control**: Optional write permission enforcement via `allowWrites` flag
 - **TypeScript Support**: Full TypeScript definitions and type safety
 
 ## Core Components
 
 ### MySQLProvider Class
 
-The main class that provides MySQL database functionality.
+The main class that provides MySQL database functionality. Extends `DatabaseProvider` from `@tokenring-ai/database`.
+
+#### Interface: MySQLResourceProps
+
+```typescript
+interface MySQLResourceProps extends DatabaseProviderOptions {
+  host: string;
+  port?: number;
+  user: string;
+  password: string;
+  databaseName: string;
+  connectionLimit?: number;
+}
+```
+
+**Properties:**
+
+- `host` (string, required): MySQL server hostname or IP address
+- `port` (number, optional): MySQL port number (default: `3306`)
+- `user` (string, required): Database username
+- `password` (string, required): Database password
+- `databaseName` (string, required): Name of the target database
+- `connectionLimit` (number, optional): Maximum number of pooled connections (default: `10`)
+- `allowWrites` (boolean, optional): Whether to allow write operations (default: `false`)
 
 #### Constructor
 
@@ -34,13 +57,21 @@ constructor(props: MySQLResourceProps)
 
 **Parameters:**
 
-- `allowWrites` (boolean, optional): Whether to allow write operations (default: `false`)
-- `host` (string): MySQL server hostname or IP address
-- `port` (number, optional): MySQL port number (default: `3306`)
-- `user` (string): Database username
-- `password` (string): Database password
-- `databaseName` (string): Name of the target database
-- `connectionLimit` (number, optional): Maximum number of pooled connections (default: `10`)
+- `props` (MySQLResourceProps): Configuration object containing database connection details
+
+**Example:**
+
+```typescript
+const mysqlProvider = new MySQLProvider({
+  host: "localhost",
+  port: 3306,
+  user: "root",
+  password: "password",
+  databaseName: "myapp",
+  connectionLimit: 10,
+  allowWrites: false
+});
+```
 
 #### Methods
 
@@ -50,10 +81,14 @@ constructor(props: MySQLResourceProps)
 async executeSql(sqlQuery: string): Promise<ExecuteSqlResult>
 ```
 
-Executes a raw SQL query and returns the results.
+Executes a raw SQL query and returns the results. Uses a connection from the pool and automatically releases it after execution.
+
+**Parameters:**
+
+- `sqlQuery` (string): The SQL query to execute
 
 **Returns:** `ExecuteSqlResult` object containing:
-- `rows`: Array of row objects (`Record<string, string | number | null>[]`)
+- `rows`: Array of row objects (`RowDataPacket[]`)
 - `fields`: Array of field names (`string[]`)
 
 **Example:**
@@ -64,13 +99,19 @@ console.log(result.rows); // [{ id: 1, name: "John", email: "john@example.com" }
 console.log(result.fields); // ["id", "name", "email"]
 ```
 
+**Error Handling:**
+
+- Throws errors for invalid SQL syntax
+- Throws errors for connection failures
+- Throws errors when write operations are attempted with `allowWrites: false`
+
 ##### showSchema
 
 ```typescript
 async showSchema(): Promise<Record<string, string>>
 ```
 
-Retrieves the CREATE TABLE statements for all tables in the database.
+Retrieves the CREATE TABLE statements for all tables in the database. Uses `SHOW TABLES` and `SHOW CREATE TABLE` commands.
 
 **Returns:** Object mapping table names to their CREATE TABLE SQL strings.
 
@@ -87,12 +128,19 @@ console.log(schema.users);
 // ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 ```
 
+**Implementation Details:**
+
+- Executes `SHOW TABLES` to get all table names
+- For each table, executes `SHOW CREATE TABLE \`tableName\``
+- Returns a record mapping table names to their CREATE TABLE statements
+- If a table's CREATE statement cannot be retrieved, returns "Could not retrieve CREATE TABLE statement."
+
 ## Package Exports
 
 This package supports multiple import paths:
 
 ```typescript
-// Main package import
+// Main package import (default export)
 import MySQLProvider from '@tokenring-ai/mysql';
 
 // Direct import with extension
@@ -137,19 +185,22 @@ const databaseConfig = {
 
 When configuring a MySQL provider, the following properties are supported:
 
-- `type`: Must be `"mysql"`
-- `host`: MySQL server hostname or IP address (required)
-- `port`: MySQL port number (default: `3306`)
-- `user`: Database username (required)
-- `password`: Database password (required)
-- `databaseName`: Name of the target database (required)
-- `connectionLimit`: Maximum number of pooled connections (default: `10`)
-- `allowWrites`: Whether to allow write operations (default: `false`)
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `type` | string | Yes | - | Must be `"mysql"` |
+| `host` | string | Yes | - | MySQL server hostname or IP address |
+| `port` | number | No | `3306` | MySQL port number |
+| `user` | string | Yes | - | Database username |
+| `password` | string | Yes | - | Database password |
+| `databaseName` | string | Yes | - | Name of the target database |
+| `connectionLimit` | number | No | `10` | Maximum number of pooled connections |
+| `allowWrites` | boolean | No | `false` | Whether to allow write operations |
 
 ### Pool Configuration
 
 The connection pool uses these internal settings:
-- `waitForConnections: true` - Wait for available connections
+
+- `waitForConnections: true` - Wait for available connections if pool is exhausted
 - `queueLimit: 0` - Unlimited queue size
 - `connectionLimit` - Configurable maximum connections (default: 10)
 
@@ -164,7 +215,7 @@ The `@tokenring-ai/mysql` package itself doesn't define tools directly, but it w
 - **database_executeSql**: Executes SQL queries on registered MySQL databases
 - **database_showSchema**: Retrieves database schemas for registered MySQL databases
 
-These tools are automatically available when the plugin is registered with a TokenRing application.
+These tools are automatically available when the plugin is registered with a TokenRing application and MySQL providers are configured.
 
 ## Services
 
@@ -177,6 +228,13 @@ The MySQL plugin registers MySQL providers with the `DatabaseService` when confi
 const databaseService = app.services.find(s => s.name === "DatabaseService");
 const mysqlProvider = databaseService.getDatabaseByName("mymysql");
 ```
+
+### Plugin Installation Flow
+
+1. Plugin receives configuration with `database.providers` object
+2. For each provider with `type === "mysql"`, creates a new `MySQLProvider` instance
+3. Registers the provider with `DatabaseService` using `registerDatabase(name, provider)`
+4. Uses `app.waitForService` to ensure `DatabaseService` is available before registration
 
 ## Providers
 
@@ -217,15 +275,9 @@ This package does not have state slices or state management functionality.
 
 ## Error Handling
 
-The package provides comprehensive error handling:
+The package provides comprehensive error handling through the MySQL driver and connection pooling:
 
-- **Invalid Credentials**: Throws clear error messages for invalid MySQL credentials
-- **Connection Failures**: Handles network issues with descriptive errors
-- **SQL Errors**: Proper error handling for invalid SQL queries
-- **Write Permissions**: Prevents write operations when `allowWrites` is false
-- **Validation Errors**: Zod schema validation for all configuration options
-
-Common error scenarios:
+**Common Error Scenarios:**
 
 | Error | Cause | Solution |
 |-------|-------|----------|
@@ -233,15 +285,23 @@ Common error scenarios:
 | Authentication failure | Invalid credentials | Verify username, password, and MySQL user privileges |
 | Database access error | Insufficient permissions | Ensure the user has proper permissions for the database |
 | SQL syntax error | Invalid SQL query | Validate your SQL queries before execution |
-| Connection pool exhaustion | Too many concurrent connections | Increase connectionLimit in configuration |
+| Connection pool exhaustion | Too many concurrent connections | Increase `connectionLimit` in configuration |
+| Write operation blocked | `allowWrites` is `false` | Set `allowWrites: true` if write operations are needed |
+
+**Error Propagation:**
+
+- Errors from `mysql2` are propagated directly to the caller
+- Connection errors are thrown immediately if the pool cannot establish connections
+- Query errors include the SQL statement and MySQL error details
 
 ## Security Considerations
 
 - Use environment variables for sensitive credentials
-- Configure allowWrites carefully to prevent unauthorized modifications
+- Configure `allowWrites` carefully to prevent unauthorized modifications
 - Consider using read-only users for agents that only need to query data
 - Validate and sanitize all SQL input to prevent injection attacks
 - Limit database access to necessary tables and operations based on agent requirements
+- Never commit credentials to version control
 
 ## Usage Examples
 
@@ -330,6 +390,46 @@ const mysqlProvider = databaseService.getDatabaseByName("mymysql");
 const result = await mysqlProvider.executeSql("SELECT * FROM users");
 ```
 
+### Multiple Database Providers
+
+Configure multiple MySQL databases:
+
+```typescript
+const app = new TokenRingApp({
+  config: {
+    database: {
+      providers: {
+        production: {
+          type: "mysql",
+          host: "prod-db.example.com",
+          user: "prod_user",
+          password: "prod_password",
+          databaseName: "production_db",
+          allowWrites: true
+        },
+        staging: {
+          type: "mysql",
+          host: "staging-db.example.com",
+          user: "staging_user",
+          password: "staging_password",
+          databaseName: "staging_db",
+          allowWrites: false
+        }
+      }
+    }
+  }
+});
+
+app.use(databasePlugin);
+app.use(mysqlPlugin);
+await app.start();
+
+// Access different databases
+const databaseService = app.getServiceByType(DatabaseService);
+const productionDB = databaseService.getDatabaseByName("production");
+const stagingDB = databaseService.getDatabaseByName("staging");
+```
+
 ## Development
 
 ### Testing
@@ -337,6 +437,7 @@ const result = await mysqlProvider.executeSql("SELECT * FROM users");
 ```bash
 bun run test
 bun run test:coverage
+bun run test:watch
 ```
 
 ### Package Structure
@@ -348,14 +449,32 @@ pkg/mysql/
 ├── plugin.ts              # TokenRing plugin registration
 ├── package.json           # Package metadata and dependencies
 ├── vitest.config.ts       # Vitest test configuration
-└── README.md             # Package documentation
+└── README.md              # Package documentation
 ```
+
+### Build
+
+```bash
+bun run build
+```
+
+Runs TypeScript type checking with `tsc --noEmit`.
 
 ### Dependencies
 
-- `@tokenring-ai/app` - Base application framework and plugin system
-- `@tokenring-ai/database` - Abstract database provider and service
-- `mysql2` - MySQL driver with promise support
+| Package | Version | Description |
+|---------|---------|-------------|
+| `@tokenring-ai/app` | `0.2.0` | Base application framework and plugin system |
+| `@tokenring-ai/database` | `0.2.0` | Abstract database provider and service |
+| `mysql2` | `^3.18.2` | MySQL driver with promise support |
+| `zod` | `^4.3.6` | Schema validation library |
+
+### Dev Dependencies
+
+| Package | Version | Description |
+|---------|---------|-------------|
+| `vitest` | `^4.0.18` | Test framework |
+| `typescript` | `^5.9.3` | TypeScript compiler |
 
 ## Related Components
 
