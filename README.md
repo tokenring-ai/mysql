@@ -4,6 +4,8 @@
 
 MySQL database integration package for the TokenRing AI platform, providing connection pooling, SQL query execution, and schema inspection capabilities through a unified interface. This package extends the base `DatabaseProvider` from `@tokenring-ai/database` to offer MySQL-specific functionality and integrates seamlessly with the TokenRing ecosystem as a plugin.
 
+The package implements the MySQL database provider pattern, enabling TokenRing agents to interact with MySQL databases through a standardized interface. It leverages the `DatabaseService` for provider management and supports both read-only and read-write operations with configurable permissions.
+
 ## Installation
 
 ```bash
@@ -19,6 +21,7 @@ bun install @tokenring-ai/mysql @tokenring-ai/database mysql2 zod
 - **Type-Safe Configuration**: Zod-based schema validation for configuration
 - **Write Operation Control**: Optional write permission enforcement via `allowWrites` flag
 - **TypeScript Support**: Full TypeScript definitions and type safety
+- **Base Provider Extension**: Extends `DatabaseProvider` for consistent database interaction patterns
 
 ## Core Components
 
@@ -47,6 +50,9 @@ interface MySQLResourceProps extends DatabaseProviderOptions {
 - `password` (string, required): Database password
 - `databaseName` (string, required): Name of the target database
 - `connectionLimit` (number, optional): Maximum number of pooled connections (default: `10`)
+
+**Inherited Properties from `DatabaseProviderOptions`:**
+
 - `allowWrites` (boolean, optional): Whether to allow write operations (default: `false`)
 
 #### Constructor
@@ -88,8 +94,8 @@ Executes a raw SQL query and returns the results. Uses a connection from the poo
 - `sqlQuery` (string): The SQL query to execute
 
 **Returns:** `ExecuteSqlResult` object containing:
-- `rows`: Array of row objects (`RowDataPacket[]`)
-- `fields`: Array of field names (`string[]`)
+- `rows`: Array of row objects (`RowDataPacket[]`) - Each row is a record with column names as keys
+- `fields`: Array of field names (`string[]`) - Column names from the query result
 
 **Example:**
 
@@ -135,7 +141,7 @@ console.log(schema.users);
 - Returns a record mapping table names to their CREATE TABLE statements
 - If a table's CREATE statement cannot be retrieved, returns "Could not retrieve CREATE TABLE statement."
 
-## Package Exports
+### Package Exports
 
 This package supports multiple import paths:
 
@@ -235,6 +241,19 @@ const mysqlProvider = databaseService.getDatabaseByName("mymysql");
 2. For each provider with `type === "mysql"`, creates a new `MySQLProvider` instance
 3. Registers the provider with `DatabaseService` using `registerDatabase(name, provider)`
 4. Uses `app.waitForService` to ensure `DatabaseService` is available before registration
+
+### DatabaseService Integration
+
+The `DatabaseService` from `@tokenring-ai/database` manages all database providers using a `KeyedRegistry` pattern:
+
+```typescript
+// DatabaseService provides these methods:
+- registerDatabase(name: string, provider: DatabaseProvider): void
+- getDatabaseByName(name: string): DatabaseProvider | undefined
+- getAvailableDatabases(): string[] // Returns all registered database names
+```
+
+MySQL providers are registered as `DatabaseProvider` instances and can be accessed through the `DatabaseService`.
 
 ## Providers
 
@@ -430,6 +449,22 @@ const productionDB = databaseService.getDatabaseByName("production");
 const stagingDB = databaseService.getDatabaseByName("staging");
 ```
 
+### KeyedRegistry Pattern
+
+The `DatabaseService` uses the `KeyedRegistry` pattern for managing database providers:
+
+```typescript
+import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
+
+// The DatabaseService internally uses:
+databases = new KeyedRegistry<DatabaseProvider>();
+
+// This provides:
+- register(name, item): Register a new provider
+- getItemByName(name): Retrieve a provider by name
+- getAllItemNames(): Get all registered provider names
+```
+
 ## Development
 
 ### Testing
@@ -480,6 +515,7 @@ Runs TypeScript type checking with `tsc --noEmit`.
 
 - `@tokenring-ai/database` - Base database abstraction and DatabaseService
 - `@tokenring-ai/app` - Application framework for plugin integration
+- `@tokenring-ai/utility` - KeyedRegistry and other utility functions
 
 ## License
 
