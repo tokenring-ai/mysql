@@ -501,14 +501,14 @@ Runs TypeScript type checking with `tsc --noEmit`.
 |---------|---------|-------------|
 | `@tokenring-ai/app` | `0.2.0` | Base application framework and plugin system |
 | `@tokenring-ai/database` | `0.2.0` | Abstract database provider and service |
-| `mysql2` | `^3.18.2` | MySQL driver with promise support |
+| `mysql2` | `^3.19.1` | MySQL driver with promise support |
 | `zod` | `^4.3.6` | Schema validation library |
 
 ### Dev Dependencies
 
 | Package | Version | Description |
 |---------|---------|-------------|
-| `vitest` | `^4.0.18` | Test framework |
+| `vitest` | `^4.1.0` | Test framework |
 | `typescript` | `^5.9.3` | TypeScript compiler |
 
 ## Related Components
