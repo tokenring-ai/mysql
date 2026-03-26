@@ -2,8 +2,8 @@ import {TokenRingPlugin} from "@tokenring-ai/app";
 import {DatabaseConfigSchema} from "@tokenring-ai/database";
 import DatabaseService from "@tokenring-ai/database/DatabaseService";
 import {z} from "zod";
-import MySQLProvider from "./MySQLProvider.js";
-import packageJSON from './package.json' with {type: 'json'};
+import MySQLProvider from "./MySQLProvider.ts";
+import packageJSON from "./package.json" with {type: 'json'};
 
 const packageConfigSchema = z.object({
   database: DatabaseConfigSchema

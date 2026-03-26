@@ -6,13 +6,7 @@ MySQL database integration package for the TokenRing AI platform, providing conn
 
 The package implements the MySQL database provider pattern, enabling TokenRing agents to interact with MySQL databases through a standardized interface. It leverages the `DatabaseService` for provider management and supports both read-only and read-write operations with configurable permissions.
 
-## Installation
-
-```bash
-bun install @tokenring-ai/mysql @tokenring-ai/database mysql2 zod
-```
-
-## Features
+## Key Features
 
 - **Connection Pooling**: Efficient connection management using `mysql2` with configurable limits
 - **SQL Query Execution**: Execute raw SQL queries with proper result handling
@@ -23,7 +17,13 @@ bun install @tokenring-ai/mysql @tokenring-ai/database mysql2 zod
 - **TypeScript Support**: Full TypeScript definitions and type safety
 - **Base Provider Extension**: Extends `DatabaseProvider` for consistent database interaction patterns
 
-## Core Components
+## Installation
+
+```bash
+bun install @tokenring-ai/mysql @tokenring-ai/database mysql2 zod
+```
+
+## Core Components/API
 
 ### MySQLProvider Class
 
@@ -137,7 +137,7 @@ console.log(schema.users);
 **Implementation Details:**
 
 - Executes `SHOW TABLES` to get all table names
-- For each table, executes `SHOW CREATE TABLE \`tableName\``
+- For each table, executes `SHOW CREATE TABLE \`${tableName}\``
 - Returns a record mapping table names to their CREATE TABLE statements
 - If a table's CREATE statement cannot be retrieved, returns "Could not retrieve CREATE TABLE statement."
 
@@ -152,6 +152,67 @@ import MySQLProvider from '@tokenring-ai/mysql';
 // Direct import with extension
 import MySQLProvider from '@tokenring-ai/mysql/MySQLProvider.js';
 ```
+
+## Services
+
+### MySQLProvider Registration
+
+The MySQL plugin registers MySQL providers with the `DatabaseService` when configured:
+
+```typescript
+// After plugin installation
+const databaseService = app.services.find(s => s.name === "DatabaseService");
+const mysqlProvider = databaseService.getDatabaseByName("mymysql");
+```
+
+### Plugin Installation Flow
+
+1. Plugin receives configuration with `database.providers` object
+2. For each provider with `type === "mysql"`, creates a new `MySQLProvider` instance
+3. Registers the provider with `DatabaseService` using `registerDatabase(name, provider)`
+4. Uses `app.waitForService` to ensure `DatabaseService` is available before registration
+
+### DatabaseService Integration
+
+The `DatabaseService` from `@tokenring-ai/database` manages all database providers using a `KeyedRegistry` pattern:
+
+```typescript
+// DatabaseService provides these methods:
+- registerDatabase(name: string, provider: DatabaseProvider): void
+- getDatabaseByName(name: string): DatabaseProvider | undefined
+- getAvailableDatabases(): string[] // Returns all registered database names
+```
+
+MySQL providers are registered as `DatabaseProvider` instances and can be accessed through the `DatabaseService`.
+
+## Providers
+
+### MySQLProvider
+
+The `MySQLProvider` class extends `DatabaseProvider` from `@tokenring-ai/database` and implements the required methods for MySQL-specific functionality.
+
+**Provider Interface:**
+
+```typescript
+interface MySQLResourceProps extends DatabaseProviderOptions {
+  host: string;
+  port?: number;
+  user: string;
+  password: string;
+  databaseName: string;
+  connectionLimit?: number;
+}
+```
+
+**Provider Properties:**
+
+- `host`: MySQL server hostname or IP address (required)
+- `port`: MySQL port number (default: `3306`)
+- `user`: Database username (required)
+- `password`: Database password (required)
+- `databaseName`: Name of the target database (required)
+- `connectionLimit`: Maximum number of pooled connections (default: `10`)
+- `allowWrites`: Whether to allow write operations (default: `false`)
 
 ## Plugin Configuration
 
@@ -223,67 +284,6 @@ The `@tokenring-ai/mysql` package itself doesn't define tools directly, but it w
 
 These tools are automatically available when the plugin is registered with a TokenRing application and MySQL providers are configured.
 
-## Services
-
-### MySQLProvider Registration
-
-The MySQL plugin registers MySQL providers with the `DatabaseService` when configured:
-
-```typescript
-// After plugin installation
-const databaseService = app.services.find(s => s.name === "DatabaseService");
-const mysqlProvider = databaseService.getDatabaseByName("mymysql");
-```
-
-### Plugin Installation Flow
-
-1. Plugin receives configuration with `database.providers` object
-2. For each provider with `type === "mysql"`, creates a new `MySQLProvider` instance
-3. Registers the provider with `DatabaseService` using `registerDatabase(name, provider)`
-4. Uses `app.waitForService` to ensure `DatabaseService` is available before registration
-
-### DatabaseService Integration
-
-The `DatabaseService` from `@tokenring-ai/database` manages all database providers using a `KeyedRegistry` pattern:
-
-```typescript
-// DatabaseService provides these methods:
-- registerDatabase(name: string, provider: DatabaseProvider): void
-- getDatabaseByName(name: string): DatabaseProvider | undefined
-- getAvailableDatabases(): string[] // Returns all registered database names
-```
-
-MySQL providers are registered as `DatabaseProvider` instances and can be accessed through the `DatabaseService`.
-
-## Providers
-
-### MySQLProvider
-
-The `MySQLProvider` class extends `DatabaseProvider` from `@tokenring-ai/database` and implements the required methods for MySQL-specific functionality.
-
-**Provider Interface:**
-
-```typescript
-interface MySQLResourceProps extends DatabaseProviderOptions {
-  host: string;
-  port?: number;
-  user: string;
-  password: string;
-  databaseName: string;
-  connectionLimit?: number;
-}
-```
-
-**Provider Properties:**
-
-- `host`: MySQL server hostname or IP address (required)
-- `port`: MySQL port number (default: `3306`)
-- `user`: Database username (required)
-- `password`: Database password (required)
-- `databaseName`: Name of the target database (required)
-- `connectionLimit`: Maximum number of pooled connections (default: `10`)
-- `allowWrites`: Whether to allow write operations (default: `false`)
-
 ## RPC Endpoints
 
 This package does not define RPC endpoints.
@@ -292,35 +292,15 @@ This package does not define RPC endpoints.
 
 This package does not have state slices or state management functionality.
 
-## Error Handling
+## Best Practices
 
-The package provides comprehensive error handling through the MySQL driver and connection pooling:
-
-**Common Error Scenarios:**
-
-| Error | Cause | Solution |
-|-------|-------|----------|
-| Connection timeout | Network issues or incorrect host/port | Verify host, port, and network connectivity |
-| Authentication failure | Invalid credentials | Verify username, password, and MySQL user privileges |
-| Database access error | Insufficient permissions | Ensure the user has proper permissions for the database |
-| SQL syntax error | Invalid SQL query | Validate your SQL queries before execution |
-| Connection pool exhaustion | Too many concurrent connections | Increase `connectionLimit` in configuration |
-| Write operation blocked | `allowWrites` is `false` | Set `allowWrites: true` if write operations are needed |
-
-**Error Propagation:**
-
-- Errors from `mysql2` are propagated directly to the caller
-- Connection errors are thrown immediately if the pool cannot establish connections
-- Query errors include the SQL statement and MySQL error details
-
-## Security Considerations
-
-- Use environment variables for sensitive credentials
-- Configure `allowWrites` carefully to prevent unauthorized modifications
-- Consider using read-only users for agents that only need to query data
-- Validate and sanitize all SQL input to prevent injection attacks
-- Limit database access to necessary tables and operations based on agent requirements
-- Never commit credentials to version control
+- **Connection Pooling**: Use appropriate connection limits based on your application's concurrency requirements. The default of 10 connections is suitable for most use cases.
+- **Write Protection**: Use the `allowWrites` flag to restrict write operations. Set to `false` for read-only agents and `true` when write operations are needed.
+- **Error Handling**: Always handle errors from database operations. Connection errors, SQL syntax errors, and permission errors are propagated directly from the MySQL driver.
+- **Security**: Never commit credentials to version control. Use environment variables for sensitive data like database passwords.
+- **Schema Inspection**: Use `showSchema()` to understand database structure before executing queries. This helps agents make informed decisions about database operations.
+- **Connection Management**: The package automatically manages connection pooling and releases connections after use. No manual connection management is required.
+- **Multiple Databases**: Configure multiple MySQL providers to work with different databases. Each provider is registered with a unique name in the `DatabaseService`.
 
 ## Usage Examples
 
@@ -465,6 +445,36 @@ databases = new KeyedRegistry<DatabaseProvider>();
 - getAllItemNames(): Get all registered provider names
 ```
 
+## Error Handling
+
+The package provides comprehensive error handling through the MySQL driver and connection pooling:
+
+**Common Error Scenarios:**
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Connection timeout | Network issues or incorrect host/port | Verify host, port, and network connectivity |
+| Authentication failure | Invalid credentials | Verify username, password, and MySQL user privileges |
+| Database access error | Insufficient permissions | Ensure the user has proper permissions for the database |
+| SQL syntax error | Invalid SQL query | Validate your SQL queries before execution |
+| Connection pool exhaustion | Too many concurrent connections | Increase `connectionLimit` in configuration |
+| Write operation blocked | `allowWrites` is `false` | Set `allowWrites: true` if write operations are needed |
+
+**Error Propagation:**
+
+- Errors from `mysql2` are propagated directly to the caller
+- Connection errors are thrown immediately if the pool cannot establish connections
+- Query errors include the SQL statement and MySQL error details
+
+## Security Considerations
+
+- Use environment variables for sensitive credentials
+- Configure `allowWrites` carefully to prevent unauthorized modifications
+- Consider using read-only users for agents that only need to query data
+- Validate and sanitize all SQL input to prevent injection attacks
+- Limit database access to necessary tables and operations based on agent requirements
+- Never commit credentials to version control
+
 ## Development
 
 ### Testing
@@ -495,21 +505,21 @@ bun run build
 
 Runs TypeScript type checking with `tsc --noEmit`.
 
-### Dependencies
+## Dependencies
 
 | Package | Version | Description |
 |---------|---------|-------------|
 | `@tokenring-ai/app` | `0.2.0` | Base application framework and plugin system |
 | `@tokenring-ai/database` | `0.2.0` | Abstract database provider and service |
-| `mysql2` | `^3.19.1` | MySQL driver with promise support |
+| `mysql2` | `^3.20.0` | MySQL driver with promise support |
 | `zod` | `^4.3.6` | Schema validation library |
 
 ### Dev Dependencies
 
 | Package | Version | Description |
 |---------|---------|-------------|
-| `vitest` | `^4.1.0` | Test framework |
-| `typescript` | `^5.9.3` | TypeScript compiler |
+| `vitest` | `^4.1.1` | Test framework |
+| `typescript` | `^6.0.2` | TypeScript compiler |
 
 ## Related Components
 

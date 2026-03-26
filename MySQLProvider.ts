@@ -44,7 +44,7 @@ export default class MySQLProvider extends DatabaseProvider {
   async executeSql(sqlQuery: string): Promise<ExecuteSqlResult> {
     let connection: PoolConnection | undefined;
     try {
-      const connection = await this.pool.getConnection();
+      connection = await this.pool.getConnection();
       const [rows, fields] = await connection.execute(sqlQuery);
 
       return {
