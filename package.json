@@ -1,6 +1,6 @@
 {
   "name": "@tokenring-ai/mysql",
-  "description": "MySQL database resources integration",
+  "description": "Dedicated provider for connecting agents to MySQL database instances.",
   "version": "0.2.0",
   "dependencies": {
     "@tokenring-ai/app": "0.2.0",
