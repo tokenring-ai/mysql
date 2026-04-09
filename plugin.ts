@@ -3,7 +3,7 @@ import DatabaseService from "@tokenring-ai/database/DatabaseService";
 import {z} from "zod";
 import MySQLProvider from "./MySQLProvider.ts";
 import packageJSON from "./package.json" with {type: "json"};
-import {MySQLAccountSchema, MySQLConfigSchema, type MySQLAccount} from "./schema.ts";
+import {type MySQLAccount, MySQLAccountSchema, MySQLConfigSchema} from "./schema.ts";
 
 const packageConfigSchema = z.object({
   mysql: MySQLConfigSchema.prefault({accounts: {}}),
