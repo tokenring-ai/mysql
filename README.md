@@ -94,6 +94,7 @@ Executes a raw SQL query and returns the results. Uses a connection from the poo
 - `sqlQuery` (string): The SQL query to execute
 
 **Returns:** `ExecuteSqlResult` object containing:
+
 - `rows`: Array of row objects (`RowDataPacket[]`) - Each row is a record with column names as keys
 - `fields`: Array of field names (`string[]`) - Column names from the query result
 

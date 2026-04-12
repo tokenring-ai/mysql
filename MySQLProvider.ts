@@ -1,6 +1,6 @@
 import {DatabaseProvider} from "@tokenring-ai/database";
-import type {DatabaseProviderOptions, ExecuteSqlResult,} from "@tokenring-ai/database/DatabaseProvider";
-import {createPool, type FieldPacket, type Pool, type PoolConnection, type RowDataPacket,} from "mysql2/promise";
+import type {DatabaseProviderOptions, ExecuteSqlResult} from "@tokenring-ai/database/DatabaseProvider";
+import {createPool, type FieldPacket, type Pool, type PoolConnection, type RowDataPacket} from "mysql2/promise";
 
 export interface MySQLResourceProps extends DatabaseProviderOptions {
   host: string;
