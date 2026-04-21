@@ -1,28 +1,20 @@
-import {DatabaseProvider} from "@tokenring-ai/database";
-import type {DatabaseProviderOptions, ExecuteSqlResult} from "@tokenring-ai/database/DatabaseProvider";
-import {createPool, type FieldPacket, type Pool, type PoolConnection, type RowDataPacket} from "mysql2/promise";
+import { DatabaseProvider } from "@tokenring-ai/database";
+import type { DatabaseProviderOptions, ExecuteSqlResult } from "@tokenring-ai/database/DatabaseProvider";
+import { createPool, type FieldPacket, type Pool, type PoolConnection, type RowDataPacket } from "mysql2/promise";
 
 export interface MySQLResourceProps extends DatabaseProviderOptions {
   host: string;
-  port?: number;
+  port?: number | undefined;
   user: string;
   password: string;
   databaseName: string;
-  connectionLimit?: number;
+  connectionLimit?: number | undefined;
 }
 
 export default class MySQLProvider extends DatabaseProvider {
   private pool!: Pool;
 
-  constructor({
-                allowWrites = false,
-                host,
-                port = 3306,
-                user,
-                password,
-                databaseName,
-                connectionLimit = 10,
-              }: MySQLResourceProps) {
+  constructor({ allowWrites = false, host, port = 3306, user, password, databaseName, connectionLimit = 10 }: MySQLResourceProps) {
     super(allowWrites);
 
     // Initialize the pool
@@ -49,7 +41,7 @@ export default class MySQLProvider extends DatabaseProvider {
 
       return {
         rows: rows as RowDataPacket[],
-        fields: (fields as FieldPacket[]).map((f) => f.name),
+        fields: (fields as FieldPacket[]).map(f => f.name),
       };
     } finally {
       connection?.release();
@@ -69,15 +61,10 @@ export default class MySQLProvider extends DatabaseProvider {
 
       for (const tableRow of tables as RowDataPacket[]) {
         const tableName = Object.values(tableRow)[0];
-        const [createTableRows] = await connection.execute(
-          `SHOW CREATE TABLE \`${tableName}\`;`,
-        );
+        const [createTableRows] = await connection.execute(`SHOW CREATE TABLE \`${tableName}\`;`);
 
         const createTableResult = createTableRows as RowDataPacket[];
-        if (
-          createTableResult.length > 0 &&
-          createTableResult[0]["Create Table"]
-        ) {
+        if (createTableResult.length > 0 && createTableResult[0]["Create Table"]) {
           schema[tableName] = createTableResult[0]["Create Table"];
         } else {
           schema[tableName] = "Could not retrieve CREATE TABLE statement.";

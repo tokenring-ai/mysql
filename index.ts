@@ -1,1 +1,1 @@
-export {default as MySQLProvider} from "./MySQLProvider.ts";
+export { default as MySQLProvider } from "./MySQLProvider.ts";
