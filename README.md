@@ -2,9 +2,14 @@
 
 ## Overview
 
-MySQL database integration package for the TokenRing AI platform, providing connection pooling, SQL query execution, and schema inspection capabilities through a unified interface. This package extends the base `DatabaseProvider` from `@tokenring-ai/database` to offer MySQL-specific functionality and integrates seamlessly with the TokenRing ecosystem as a plugin.
+MySQL database integration package for the TokenRing AI platform, providing connection pooling, SQL query execution, and
+schema inspection capabilities through a unified interface. This package extends the base `DatabaseProvider` from
+`@tokenring-ai/database` to offer MySQL-specific functionality and integrates seamlessly with the TokenRing ecosystem as
+a plugin.
 
-The package implements the MySQL database provider pattern, enabling TokenRing agents to interact with MySQL databases through a standardized interface. It leverages the `DatabaseService` for provider management and supports both read-only and read-write operations with configurable permissions.
+The package implements the MySQL database provider pattern, enabling TokenRing agents to interact with MySQL databases
+through a standardized interface. It leverages the `DatabaseService` for provider management and supports both read-only
+and read-write operations with configurable permissions.
 
 ## Key Features
 
@@ -58,7 +63,10 @@ interface MySQLResourceProps extends DatabaseProviderOptions {
 #### Constructor
 
 ```typescript
-constructor(props: MySQLResourceProps)
+constructor(props
+:
+MySQLResourceProps
+)
 ```
 
 **Parameters:**
@@ -87,7 +95,8 @@ const mysqlProvider = new MySQLProvider({
 async executeSql(sqlQuery: string): Promise<ExecuteSqlResult>
 ```
 
-Executes a raw SQL query and returns the results. Uses a connection from the pool and automatically releases it after execution.
+Executes a raw SQL query and returns the results. Uses a connection from the pool and automatically releases it after
+execution.
 
 **Parameters:**
 
@@ -118,7 +127,8 @@ console.log(result.fields); // ["id", "name", "email"]
 async showSchema(): Promise<Record<string, string>>
 ```
 
-Retrieves the CREATE TABLE statements for all tables in the database. Uses `SHOW TABLES` and `SHOW CREATE TABLE` commands.
+Retrieves the CREATE TABLE statements for all tables in the database. Uses `SHOW TABLES` and `SHOW CREATE TABLE`
+commands.
 
 **Returns:** Object mapping table names to their CREATE TABLE SQL strings.
 
@@ -190,7 +200,8 @@ MySQL providers are registered as `DatabaseProvider` instances and can be access
 
 ### MySQLProvider
 
-The `MySQLProvider` class extends `DatabaseProvider` from `@tokenring-ai/database` and implements the required methods for MySQL-specific functionality.
+The `MySQLProvider` class extends `DatabaseProvider` from `@tokenring-ai/database` and implements the required methods
+for MySQL-specific functionality.
 
 **Provider Interface:**
 
@@ -253,16 +264,16 @@ const databaseConfig = {
 
 When configuring a MySQL provider, the following properties are supported:
 
-| Property | Type | Required | Default | Description |
-|----------|------|----------|---------|-------------|
-| `type` | string | Yes | - | Must be `"mysql"` |
-| `host` | string | Yes | - | MySQL server hostname or IP address |
-| `port` | number | No | `3306` | MySQL port number |
-| `user` | string | Yes | - | Database username |
-| `password` | string | Yes | - | Database password |
-| `databaseName` | string | Yes | - | Name of the target database |
-| `connectionLimit` | number | No | `10` | Maximum number of pooled connections |
-| `allowWrites` | boolean | No | `false` | Whether to allow write operations |
+| Property          | Type    | Required | Default | Description                          |
+|-------------------|---------|----------|---------|--------------------------------------|
+| `type`            | string  | Yes      | -       | Must be `"mysql"`                    |
+| `host`            | string  | Yes      | -       | MySQL server hostname or IP address  |
+| `port`            | number  | No       | `3306`  | MySQL port number                    |
+| `user`            | string  | Yes      | -       | Database username                    |
+| `password`        | string  | Yes      | -       | Database password                    |
+| `databaseName`    | string  | Yes      | -       | Name of the target database          |
+| `connectionLimit` | number  | No       | `10`    | Maximum number of pooled connections |
+| `allowWrites`     | boolean | No       | `false` | Whether to allow write operations    |
 
 ### Pool Configuration
 
@@ -278,12 +289,14 @@ This package does not have any services with an `attach(agent: Agent)` method th
 
 ## Tools
 
-The `@tokenring-ai/mysql` package itself doesn't define tools directly, but it works with the database tools provided by `@tokenring-ai/database`:
+The `@tokenring-ai/mysql` package itself doesn't define tools directly, but it works with the database tools provided by
+`@tokenring-ai/database`:
 
 - **database_executeSql**: Executes SQL queries on registered MySQL databases
 - **database_showSchema**: Retrieves database schemas for registered MySQL databases
 
-These tools are automatically available when the plugin is registered with a TokenRing application and MySQL providers are configured.
+These tools are automatically available when the plugin is registered with a TokenRing application and MySQL providers
+are configured.
 
 ## RPC Endpoints
 
@@ -295,13 +308,20 @@ This package does not have state slices or state management functionality.
 
 ## Best Practices
 
-- **Connection Pooling**: Use appropriate connection limits based on your application's concurrency requirements. The default of 10 connections is suitable for most use cases.
-- **Write Protection**: Use the `allowWrites` flag to restrict write operations. Set to `false` for read-only agents and `true` when write operations are needed.
-- **Error Handling**: Always handle errors from database operations. Connection errors, SQL syntax errors, and permission errors are propagated directly from the MySQL driver.
-- **Security**: Never commit credentials to version control. Use environment variables for sensitive data like database passwords.
-- **Schema Inspection**: Use `showSchema()` to understand database structure before executing queries. This helps agents make informed decisions about database operations.
-- **Connection Management**: The package automatically manages connection pooling and releases connections after use. No manual connection management is required.
-- **Multiple Databases**: Configure multiple MySQL providers to work with different databases. Each provider is registered with a unique name in the `DatabaseService`.
+- **Connection Pooling**: Use appropriate connection limits based on your application's concurrency requirements. The
+  default of 10 connections is suitable for most use cases.
+- **Write Protection**: Use the `allowWrites` flag to restrict write operations. Set to `false` for read-only agents and
+  `true` when write operations are needed.
+- **Error Handling**: Always handle errors from database operations. Connection errors, SQL syntax errors, and
+  permission errors are propagated directly from the MySQL driver.
+- **Security**: Never commit credentials to version control. Use environment variables for sensitive data like database
+  passwords.
+- **Schema Inspection**: Use `showSchema()` to understand database structure before executing queries. This helps agents
+  make informed decisions about database operations.
+- **Connection Management**: The package automatically manages connection pooling and releases connections after use. No
+  manual connection management is required.
+- **Multiple Databases**: Configure multiple MySQL providers to work with different databases. Each provider is
+  registered with a unique name in the `DatabaseService`.
 
 ## Usage Examples
 
@@ -441,9 +461,25 @@ import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 databases = new KeyedRegistry<DatabaseProvider>();
 
 // This provides:
-- register(name, item): Register a new provider
-- getItemByName(name): Retrieve a provider by name
-- getAllItemNames(): Get all registered provider names
+-register(name, item)
+:
+Register
+a
+new provider
+- getItemByName(name)
+:
+Retrieve
+a
+provider
+by
+name
+- getAllItemNames()
+:
+Get
+all
+registered
+provider
+names
 ```
 
 ## Error Handling
@@ -452,14 +488,14 @@ The package provides comprehensive error handling through the MySQL driver and c
 
 **Common Error Scenarios:**
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| Connection timeout | Network issues or incorrect host/port | Verify host, port, and network connectivity |
-| Authentication failure | Invalid credentials | Verify username, password, and MySQL user privileges |
-| Database access error | Insufficient permissions | Ensure the user has proper permissions for the database |
-| SQL syntax error | Invalid SQL query | Validate your SQL queries before execution |
-| Connection pool exhaustion | Too many concurrent connections | Increase `connectionLimit` in configuration |
-| Write operation blocked | `allowWrites` is `false` | Set `allowWrites: true` if write operations are needed |
+| Error                      | Cause                                 | Solution                                                |
+|----------------------------|---------------------------------------|---------------------------------------------------------|
+| Connection timeout         | Network issues or incorrect host/port | Verify host, port, and network connectivity             |
+| Authentication failure     | Invalid credentials                   | Verify username, password, and MySQL user privileges    |
+| Database access error      | Insufficient permissions              | Ensure the user has proper permissions for the database |
+| SQL syntax error           | Invalid SQL query                     | Validate your SQL queries before execution              |
+| Connection pool exhaustion | Too many concurrent connections       | Increase `connectionLimit` in configuration             |
+| Write operation blocked    | `allowWrites` is `false`              | Set `allowWrites: true` if write operations are needed  |
 
 **Error Propagation:**
 
@@ -508,18 +544,18 @@ Runs TypeScript type checking with `tsc --noEmit`.
 
 ## Dependencies
 
-| Package | Version | Description |
-|---------|---------|-------------|
-| `@tokenring-ai/app` | `0.2.0` | Base application framework and plugin system |
-| `@tokenring-ai/database` | `0.2.0` | Abstract database provider and service |
-| `mysql2` | `^3.20.0` | MySQL driver with promise support |
-| `zod` | `^4.3.6` | Schema validation library |
+| Package                  | Version   | Description                                  |
+|--------------------------|-----------|----------------------------------------------|
+| `@tokenring-ai/app`      | `0.2.0`   | Base application framework and plugin system |
+| `@tokenring-ai/database` | `0.2.0`   | Abstract database provider and service       |
+| `mysql2`                 | `^3.20.0` | MySQL driver with promise support            |
+| `zod`                    | `^4.3.6`  | Schema validation library                    |
 
 ### Dev Dependencies
 
-| Package | Version | Description |
-|---------|---------|-------------|
-| `vitest` | `^4.1.1` | Test framework |
+| Package      | Version  | Description         |
+|--------------|----------|---------------------|
+| `vitest`     | `^4.1.1` | Test framework      |
 | `typescript` | `^6.0.2` | TypeScript compiler |
 
 ## Related Components

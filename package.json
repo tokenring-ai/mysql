@@ -3,8 +3,8 @@
   "description": "Dedicated provider for connecting agents to MySQL database instances.",
   "version": "0.2.0",
   "dependencies": {
-    "@tokenring-ai/app": "0.2.0",
-    "@tokenring-ai/database": "0.2.0",
+    "@tokenring-ai/app": "workspace:*",
+    "@tokenring-ai/database": "workspace:*",
     "mysql2": "^3.20.0",
     "zod": "^4.3.6"
   },
