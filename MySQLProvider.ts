@@ -64,7 +64,7 @@ export default class MySQLProvider extends DatabaseProvider {
         const [createTableRows] = await connection.execute(`SHOW CREATE TABLE \`${tableName}\`;`);
 
         const createTableResult = createTableRows as RowDataPacket[];
-        if (createTableResult.length > 0 && createTableResult[0]["Create Table"]) {
+        if (createTableResult[0]?.["Create Table"]) {
           schema[tableName] = createTableResult[0]["Create Table"];
         } else {
           schema[tableName] = "Could not retrieve CREATE TABLE statement.";
