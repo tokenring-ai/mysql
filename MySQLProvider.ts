@@ -32,7 +32,7 @@ export default class MySQLProvider extends DatabaseProvider {
    * Executes an SQL query on the MySQL database using Bun's built-in SQL client.
    */
   async executeSql(sqlQuery: string): Promise<ExecuteSqlResult> {
-    const result = await this.sql.unsafe<Record<string,string|number|null>[]>(sqlQuery);
+    const result = await this.sql.unsafe<Record<string, string | number | null>[]>(sqlQuery);
 
     return {
       rows: [...result],
@@ -44,13 +44,13 @@ export default class MySQLProvider extends DatabaseProvider {
    * Shows the schema for all tables in a given MySQL database.
    */
   async showSchema(): Promise<Record<string, string>> {
-    const tables = await this.sql.unsafe<Record<string,string|number|null>[]>("SHOW TABLES");
+    const tables = await this.sql.unsafe<Record<string, string | number | null>[]>("SHOW TABLES");
     const schema: Record<string, string> = {};
 
     for (const tableRow of tables) {
       const tableName = String(Object.values(tableRow)[0]);
-      const createTableRows = await this.sql<Record<string,string>[]>`SHOW CREATE TABLE ${this.sql(tableName)}`;
-      const createTableResult = [...createTableRows]
+      const createTableRows = await this.sql<Record<string, string>[]>`SHOW CREATE TABLE ${this.sql(tableName)}`;
+      const createTableResult = [...createTableRows];
 
       if (createTableResult[0]?.["Create Table"]) {
         schema[tableName] = createTableResult[0]["Create Table"];
