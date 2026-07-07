@@ -5,7 +5,6 @@
   "dependencies": {
     "@tokenring-ai/app": "workspace:*",
     "@tokenring-ai/database": "workspace:*",
-    "mysql2": "^3.22.5",
     "zod": "^4.4.3"
   },
   "exports": {

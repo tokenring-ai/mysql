@@ -1,6 +1,6 @@
 import { DatabaseProvider } from "@tokenring-ai/database";
 import type { DatabaseProviderOptions, ExecuteSqlResult } from "@tokenring-ai/database/DatabaseProvider";
-import { createPool, type FieldPacket, type Pool, type PoolConnection, type RowDataPacket } from "mysql2/promise";
+import { SQL } from "bun";
 
 export interface MySQLResourceProps extends DatabaseProviderOptions {
   host: string;
@@ -12,68 +12,53 @@ export interface MySQLResourceProps extends DatabaseProviderOptions {
 }
 
 export default class MySQLProvider extends DatabaseProvider {
-  private pool!: Pool;
+  private sql: SQL;
 
   constructor({ allowWrites = false, host, port = 3306, user, password, databaseName, connectionLimit = 10 }: MySQLResourceProps) {
     super(allowWrites);
 
-    // Initialize the pool
-    this.pool = createPool({
-      host: host,
-      port: port,
-      user: user,
-      password: password,
+    this.sql = new SQL({
+      adapter: "mysql",
+      hostname: host,
+      port,
+      username: user,
+      password,
       database: databaseName,
-      waitForConnections: true,
-      connectionLimit: connectionLimit,
-      queueLimit: 0,
+      max: connectionLimit,
     });
   }
 
   /**
-   * Executes an SQL query on the MySQL database using a connection from the pool.
+   * Executes an SQL query on the MySQL database using Bun's built-in SQL client.
    */
   async executeSql(sqlQuery: string): Promise<ExecuteSqlResult> {
-    let connection: PoolConnection | undefined;
-    try {
-      connection = await this.pool.getConnection();
-      const [rows, fields] = await connection.execute(sqlQuery);
+    const result = await this.sql.unsafe<Record<string,string|number|null>[]>(sqlQuery);
 
-      return {
-        rows: rows as RowDataPacket[],
-        fields: (fields as FieldPacket[]).map(f => f.name),
-      };
-    } finally {
-      connection?.release();
-    }
+    return {
+      rows: [...result],
+      fields: result.length > 0 ? Object.keys(result[0]!) : [],
+    };
   }
 
   /**
-   * Shows the schema for all tables in a given MySQL database using a connection from the pool.
+   * Shows the schema for all tables in a given MySQL database.
    */
   async showSchema(): Promise<Record<string, string>> {
-    let connection: PoolConnection | undefined;
-    try {
-      connection = await this.pool.getConnection();
+    const tables = await this.sql.unsafe<Record<string,string|number|null>[]>("SHOW TABLES");
+    const schema: Record<string, string> = {};
 
-      const [tables] = await connection.execute("SHOW TABLES;");
-      const schema: Record<string, string> = {};
+    for (const tableRow of tables) {
+      const tableName = String(Object.values(tableRow)[0]);
+      const createTableRows = await this.sql<Record<string,string>[]>`SHOW CREATE TABLE ${this.sql(tableName)}`;
+      const createTableResult = [...createTableRows]
 
-      for (const tableRow of tables as RowDataPacket[]) {
-        const tableName = Object.values(tableRow)[0];
-        const [createTableRows] = await connection.execute(`SHOW CREATE TABLE \`${tableName}\`;`);
-
-        const createTableResult = createTableRows as RowDataPacket[];
-        if (createTableResult[0]?.["Create Table"]) {
-          schema[tableName] = createTableResult[0]["Create Table"];
-        } else {
-          schema[tableName] = "Could not retrieve CREATE TABLE statement.";
-        }
+      if (createTableResult[0]?.["Create Table"]) {
+        schema[tableName] = createTableResult[0]["Create Table"];
+      } else {
+        schema[tableName] = "Could not retrieve CREATE TABLE statement.";
       }
-
-      return schema;
-    } finally {
-      if (connection) connection.release();
     }
+
+    return schema;
   }
 }
