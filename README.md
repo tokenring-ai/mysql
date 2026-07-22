@@ -530,7 +530,6 @@ pkg/mysql/
 ├── index.ts               # Main entry point and exports
 ├── plugin.ts              # TokenRing plugin registration
 ├── package.json           # Package metadata and dependencies
-├── vitest.config.ts       # Vitest test configuration
 └── README.md              # Package documentation
 ```
 
@@ -555,7 +554,7 @@ Runs TypeScript type checking with `tsc --noEmit`.
 
 | Package      | Version  | Description         |
 |--------------|----------|---------------------|
-| `vitest`     | `^4.1.1` | Test framework      |
+| `bun test`     | builtin  | Testing framework   |
 | `typescript` | `^6.0.2` | TypeScript compiler |
 
 ## Related Components
